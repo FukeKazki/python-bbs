@@ -1,66 +1,57 @@
-import json
-from typing import Final
-from util import Socket
+from typing import Final, List
+from util import Action, Log, Server, Response, State, Message
 import multiprocessing
 
 LOG_FILE_PATH: Final = 'log.json'
 
 
-def read_json(file_path: str) -> dict:
-	with open(file_path, 'r') as file:
-		return json.load(file)
+def remove_password(message: Message) -> Message:
+	message.password = None
+	return message
 
 
-def write_json(file_path: str, data: dict) -> None:
-	with open(file_path, 'w') as file:
-		json.dump(data, file, indent=4)
+def delete_message(_list: List[Message], message: Message) -> List[Message]:
+	return [m for m in _list if m.password != message.password]
 
 
-def remove_key(dictionary: dict, key: str) -> dict:
-	dictionary.pop(key)
-	return dictionary
+def bbs(sock: Server):
+	body = sock.recv_body()
+	log = Log(LOG_FILE_PATH)
 
+	if body.action == Action.READ.value:
+		log_messages = log.read_messages()
+		messages = [remove_password(message) for message in log_messages]
+		response = Response(
+			state=State.SUCCESS.value,
+			messages=messages
+		)
+		sock.send_response(response)
 
-def remove_dict(_list: list, dictionary: dict):
-	new_list = []
-	for dic in _list:
-		if dic['password'] != dictionary['password']:
-			new_list.append(dic)
-	return new_list
-
-
-def bbs(sock):
-	data = sock.recv()
-	data = json.loads(data)
-	state = data['state']
-
-	if state == 'read':
-		log_file = read_json(LOG_FILE_PATH)
-		log_messages = log_file['messages']
-		messages = [remove_key(message, 'password') for message in log_messages]
-		messages = json.dumps(messages)
-		sock.send(messages)
-
-	elif state == 'write':
-		message = data['message']
-		log_file = read_json(LOG_FILE_PATH)
-		log_messages = log_file['messages']
+	elif body.action == Action.WRITE.value:
+		message = Message(**body.message)
+		log_messages = log.read_messages()
 		log_messages.append(message)
-		write_json(LOG_FILE_PATH, {'messages': log_messages})
+		log.write_messages(log_messages)
 
-	elif state == 'delete':
-		message = data['message']
-		log_file = read_json(LOG_FILE_PATH)
-		log_messages = log_file['messages']
-		messages = remove_dict(log_messages, message)
-		write_json(LOG_FILE_PATH, {'messages': messages})
+		response = Response(
+			state=State.SUCCESS.value
+		)
+		sock.send_response(response)
+
+	elif body.action == Action.DELETE.value:
+		message = Message(**body.message)
+		log_messages = log.read_messages()
+		messages = delete_message(log_messages, message)
+		log.write_messages(messages)
+
+		response = Response(
+			state=State.SUCCESS.value
+		)
+		sock.send_response(response)
 
 
-# TODO 結果をクライアントに送信 (成功・失敗)
 def main():
-	sock = Socket('server')
-	sock.bind(("", 50000))
-	sock.listen()
+	sock = Server(("", 50000))
 	while True:
 		sock.accept()
 		p = multiprocessing.Process(target=bbs, args=(sock,))

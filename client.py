@@ -1,64 +1,76 @@
-from util import Socket, Message
-from uuid import uuid4
-from datetime import datetime
-from hashlib import sha256
+from util import Message, Action, Client, Body, State
 from getpass import getpass
-import json
-from dataclasses import asdict
-
-
-# TODO 送信結果を表示 (成功・失敗)
 
 
 def main():
-	state = input('何をしますか?\nwrite\nread\ndelete\n')
-	sock = Socket('client')
-	sock.connect(("localhost", 50000))
+	action = input('何をしますか?\n1: 読み込み\n2: 書き込み\n3: 削除\n')
+	sock = Client(("localhost", 50000))
 
-	if state == 'write':
-		identify = str(uuid4())[:6]
-		time = str(datetime.now())
+	if action == Action.WRITE.value:
 		handle_name = input('handle_name: ')
 		content = input('content: ')
 		password = getpass('password: ')
-		password = sha256(password.encode() + identify.encode()).hexdigest()
 
-		message = Message(identify, time, handle_name, content, password)
-		message = asdict(message)
-		data = {
-			'state': state,
-			'message': message
-		}
-		json_data = json.dumps(data)
-		sock.send(json_data)
-	elif state == 'read':
-		data = {
-			'state': state
-		}
-		data = json.dumps(data)
-		sock.send(data)
-		data = sock.recv()
-		data = json.loads(data)
-		for message in data:
+		message = Message(
+			handle_name=handle_name,
+			content=content,
+			password=password
+		).encryption()
+
+		body = Body(
+			action=Action.WRITE.value,
+			message=message
+		)
+
+		sock.send_body(body)
+
+		response = sock.recv_response()
+
+		if response.state == State.FAILED.value:
+			print('書き込みに失敗しました。')
+		else:
+			print('書き込みに成功しました。')
+
+	elif action == Action.READ.value:
+		body = Body(
+			action=Action.READ.value
+		)
+
+		sock.send_body(body)
+
+		response = sock.recv_response()
+
+		if response.state == State.FAILED.value:
+			print('受信に失敗しました。')
+
+		for message in response.messages:
 			print('--------------------')
 			print(f"ID: {message['id']}")
 			print(f"TIME: {message['time']}")
 			print(f"HANDLE NAME: {message['handle_name']}")
 			print(f"CONTENT: {message['content']}")
-		pass
-	elif state == 'delete':
+
+	elif action == Action.DELETE.value:
 		identify = input('id: ')
 		password = getpass('password: ')
-		password = sha256(password.encode() + identify.encode()).hexdigest()
-		data = {
-			'state': state,
-			'message': {
-				'id': identify,
-				'password': password
-			}
-		}
-		data = json.dumps(data)
-		sock.send(data)
+
+		message = Message(
+			id=identify,
+			password=password
+		).encryption()
+		body = Body(
+			action=Action.DELETE.value,
+			message=message
+		)
+
+		sock.send_body(body)
+		response = sock.recv_response()
+
+		if response.state == State.FAILED.value:
+			print('削除に失敗しました。')
+		else:
+			print('削除に成功しました。')
+
 	else:
 		pass
 
