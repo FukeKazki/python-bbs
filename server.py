@@ -28,7 +28,7 @@ def bbs(sock: Server):
 		sock.send_response(response)
 
 	elif body.action == Action.WRITE.value:
-		message = Message(**body.message)
+		message = body.message
 		log_messages = log.read_messages()
 		log_messages.append(message)
 		log.write_messages(log_messages)
@@ -39,7 +39,7 @@ def bbs(sock: Server):
 		sock.send_response(response)
 
 	elif body.action == Action.DELETE.value:
-		message = Message(**body.message)
+		message = body.message
 		log_messages = log.read_messages()
 		messages = delete_message(log_messages, message)
 		log.write_messages(messages)

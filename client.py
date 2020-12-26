@@ -45,10 +45,10 @@ def main():
 
 		for message in response.messages:
 			print('--------------------')
-			print(f"ID: {message['id']}")
-			print(f"TIME: {message['time']}")
-			print(f"HANDLE NAME: {message['handle_name']}")
-			print(f"CONTENT: {message['content']}")
+			print(f"ID: {message.id}")
+			print(f"TIME: {message.time}")
+			print(f"HANDLE NAME: {message.handle_name}")
+			print(f"CONTENT: {message.content}")
 
 	elif action == Action.DELETE.value:
 		identify = input('id: ')

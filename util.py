@@ -98,6 +98,8 @@ class Server:
 	def recv_body(self) -> Body:
 		data = self.recv()
 		data = json.loads(data)
+		if data['message']:
+			data['message'] = Message(**data['message'])
 		return Body(**data)
 
 	def send_response(self, response: Response):
@@ -126,6 +128,8 @@ class Client:
 	def recv_response(self) -> Response:
 		response = self.recv()
 		data = json.loads(response)
+		if data['messages']:
+			data['messages'] = [Message(**message) for message in data['messages']]
 		return Response(**data)
 
 	def send_body(self, body: Body) -> None:
