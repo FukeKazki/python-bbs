@@ -1,9 +1,20 @@
-# 環境構築
+# BBS
+ネットワークプログラミング期末課題
+![img.png](img.png)
+
+## 実行環境
+- python 3.8.5
+
+## 実行方法
+### サーバーの起動
 ```bash
-$ source venv/bin/activate
+$ python3 server.py
 ```
 
-# データ構造
+### クライアントの起動
+```bash
+$ python3 client.py
+```
 
 ## 書き込み
 
@@ -90,15 +101,3 @@ state: "delete"
 - ソケットの生成
 - JSON -> 文字列の変換
 - 文字列 -> JSONの変換
-
-# メモ
-サンプルlog.jsonつくって
-データクラスの作成 (型ファイル？)
-
-1つめ
-id: str(uuid.uuid4())[:6]
-time: str(datetime.datetime.now())
-password: hashlib.sha256(b'9984e6'+b'password').hexdigest()
-
-2つめ
-password: hashlib.sha256(b'ccf421'+b'fukke').hexdigest()
