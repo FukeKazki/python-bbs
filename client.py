@@ -67,7 +67,7 @@ def main():
 		response = sock.recv_response()
 
 		if response.state == State.FAILED.value:
-			print('削除に失敗しました。')
+			print('IDもしくはPASSWORDが間違っています。')
 		else:
 			print('削除に成功しました。')
 

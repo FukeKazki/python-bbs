@@ -44,10 +44,16 @@ def bbs(sock: Server):
 		messages = delete_message(log_messages, message)
 		log.write_messages(messages)
 
-		response = Response(
-			state=State.SUCCESS.value
-		)
-		sock.send_response(response)
+		if len(log_messages) == len(messages):  # IDまたはPASSWORDが間違っている
+			response = Response(
+				state=State.FAILED.value
+			)
+			sock.send_response(response)
+		else:
+			response = Response(
+				state=State.SUCCESS.value
+			)
+			sock.send_response(response)
 
 
 def main():
